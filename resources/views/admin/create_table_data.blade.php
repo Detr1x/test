@@ -63,7 +63,7 @@
                 <button type="submit" class="btn save">Save Table</button>
             </div>
         </div>
-        <table class="users_table">
+        <table class="table_table">
             <thead>
                 <tr>
                     @forelse ($columns as $column)

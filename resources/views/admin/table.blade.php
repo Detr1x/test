@@ -60,11 +60,11 @@
                             <div class="table_container">
                                 <div class="actions-bar">
                                     <div class="btns">
-                                        <button type="button" class="btn create" id="add-row">Back</button>
+                                        <a href="{{route('tables')}}"type="button" class="btn create">Back</a>
                                         <button type="submit" class="btn save">Save Table</button>
                                     </div>
                                 </div>
-                                <table class="users_table">
+                                <table class="table_table" style="--columns-count: {{ count($columns) }};">
     <thead>
         <tr>
             @forelse ($columns as $column)
