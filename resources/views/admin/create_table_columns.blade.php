@@ -36,28 +36,76 @@
         </div>
     </header>
     <div class="create_columns_container">
-        <form method="POST" action="{{ route('admin.create_table.columns_store', ['token' => $table->table_token]) }}">
-            @csrf
-            <input type="hidden" name="token" value="{{ $table->table_token }}">
+    <form method="POST" action="{{ route('admin.create_table.columns_store', ['token' => $table->table_token]) }}">
+        @csrf
+        <input type="hidden" name="token" value="{{ $table->table_token }}">
 
-            <div class="columns_container">
-                <div class="input">
-                    <label for="name">Name:</label>
-                    <input type="text" id="name" name="columns[0][name]" required>
-                </div>
-                <div class="input">
-                    <label for="type">Type:</label>
-                    <input type="text" id="type" name="columns[0][type]" required>
-                </div>
-                <input type="hidden" name="columns[0][s_number]" value="1">
-            </div>
+        <div class="input">
+            <label for="name">Name:</label>
+            <input type="text" id="name" autocomplete="off">
+        </div>
+        <div class="input">
+            <label for="type">Type:</label>
+            <input type="text" id="type" autocomplete="off">
+             <ul class="dropdown">
+                    <li data-value="Unit">Unit</li>
+                    <li data-value="Data">Data</li>
+                    <li data-value="Date">Date</li>
+                    <li data-value="Comparing">Comparing</li>
+                    <li data-value="Serial numbers">Serial numbers</li>
+                </ul>
+        </div>
 
-            <div class="columns_show"></div>
+        <div class="columns_show"></div>
 
-            <button type="button" id="addColumn">Add Column</button>
-            <button type="submit">Confirm</button>
-        </form>
-    </div>
+        <button type="button" id="addColumn">Add Column</button>
+        <button type="submit">Confirm</button>
+    </form>
+    
+    <h3>Table Preview</h3>
+    <table class="table-preview">
+        <thead>
+            <tr></tr>
+        </thead>
+    </table>
+</div>
+
+<script>
+     document.addEventListener("DOMContentLoaded", function () {
+    console.log("JS загружен");
+
+    const input = document.querySelector("#type");
+    const dropdown = document.querySelector(".dropdown");
+
+    if (!input || !dropdown) {
+        console.log("Элементы не найдены");
+        return;
+    }
+
+    // При клике на поле — показываем список
+    input.addEventListener("click", function () {
+        console.log("Клик по инпуту type");
+        dropdown.style.display = "block";
+    });
+
+    // Выбор элемента из списка
+    dropdown.addEventListener("click", function (event) {
+        if (event.target.tagName === "LI") {
+            input.value = event.target.getAttribute("data-value");
+            dropdown.style.display = "none";
+        }
+    });
+
+    // Закрытие при клике вне списка и инпута
+    document.addEventListener("click", function (event) {
+        if (!input.contains(event.target) && !dropdown.contains(event.target)) {
+            console.log("Клик вне, скрываем список");
+            dropdown.style.display = "none";
+        }
+    });
+});
+
+    </script>
 
 </body>
 

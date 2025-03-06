@@ -9,7 +9,7 @@ class Column_data extends Model
 {
     use HasFactory;
     protected $table = 'column_data';
-    protected $fillable = ['table_token', 'column_token', 'data', 'type', 's_number'];
+    protected $fillable = ['table_token', 'column_token','hierarchy_token','parent_hierarchy_token', 'data', 'type','access', 'hierarchy_level','s_number'];
 
     // Связь с таблицей
     public function table()

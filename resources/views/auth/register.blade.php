@@ -26,7 +26,7 @@
         href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&family=Shadows+Into+Light&family=Sour+Gummy:ital,wght@0,100..900;1,100..900&display=swap"
         rel="stylesheet" />
     @vite([
-    'resources/js/admin.js',
+    'resources/js/admin/admin.js',
     'resources/sass/reset.scss',
     'resources/sass/admin.scss',
     ])
@@ -61,9 +61,23 @@
             </div>
 
             <div class="input">
-                <label for="uname">Association:</label>
-                <input type="text" id="association" name="association" required autocomplete="off">
+                <label for="association">Association:</label>
+                <input type="text" id="association" name="association" readonly>
+                <ul class="dropdown">
+                    <li data-value="ОЛИЙ ТАЪЛИМ">ОЛИЙ ТАЪЛИМ</li>
+                    <li data-value="КАСБИЙ ТАЪЛИМ">КАСБИЙ ТАЪЛИМ</li>
+                    <li data-value="АКАДЕМИК ЛИЦЕЙ">АКАДЕМИК ЛИЦЕЙ</li>
+                    <li data-value="ИЛМ, ФАН ВА ИННОВАЦИЯЛАР">ИЛМ, ФАН ВА ИННОВАЦИЯЛАР</li>
+                    <li data-value="ИНФРАТУЗИЛМА">ИНФРАТУЗИЛМА</li>
+                    <li data-value="ЎҚУВ ЖАРАЁНИНИ ВА ТАЪЛИМ СИФАТИ">ЎҚУВ ЖАРАЁНИНИ ВА ТАЪЛИМ СИФАТИ</li>
+                    <li data-value="ИЛМИЙ-ТАДҚИҚОТ ФАОЛИЯТИ ">ИЛМИЙ-ТАДҚИҚОТ ФАОЛИЯТИ </li>
+                    <li data-value="ХАЛҚАРО ИЛМИЙ-ТЕХНИК ҲАМКОРЛИК">ХАЛҚАРО ИЛМИЙ-ТЕХНИК ҲАМКОРЛИК</li>
+                    <li data-value="МАЪНАВИЙ-МАЪРИФИЙ ИШЛАР">МАЪНАВИЙ-МАЪРИФИЙ ИШЛАР</li>
+                    <li data-value="МАЛАКА ОШИРИШ">МАЛАКА ОШИРИШ</li>
+                    <li data-value="ИЖРО ИНТИЗОМИ">ИЖРО ИНТИЗОМИ</li>
+                </ul>
             </div>
+
             <div class="input">
                 <label for="password">Password:</label>
                 <input type="text" id="password" name="password" required autocomplete="off">
@@ -71,6 +85,43 @@
             <button type="submit">Create</button>
         </form>
     </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+    console.log("JS загружен");
+
+    const input = document.querySelector("#association");
+    const dropdown = document.querySelector(".dropdown");
+
+    if (!input || !dropdown) {
+        console.log("Элементы не найдены");
+        return;
+    }
+
+    // При клике на поле — показываем список
+    input.addEventListener("click", function () {
+        console.log("Клик по инпуту association");
+        dropdown.style.display = "block";
+    });
+
+    // Выбор элемента из списка
+    dropdown.addEventListener("click", function (event) {
+        if (event.target.tagName === "LI") {
+            input.value = event.target.getAttribute("data-value");
+            dropdown.style.display = "none";
+        }
+    });
+
+    // Закрытие при клике вне списка и инпута
+    document.addEventListener("click", function (event) {
+        if (!input.contains(event.target) && !dropdown.contains(event.target)) {
+            console.log("Клик вне, скрываем список");
+            dropdown.style.display = "none";
+        }
+    });
+});
+
+
+    </script>
 </body>
 
 </html>

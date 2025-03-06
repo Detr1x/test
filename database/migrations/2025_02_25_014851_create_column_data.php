@@ -15,8 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('table_token');
             $table->string('column_token');
+            $table->string('hierarchy_token');
+            $table->string('parent_hierarchy_token')->nullable();
             $table->string('data')->nullable();
             $table->string('type');
+            $table->string('access');
+            $table->string('hierarchy_level');
             $table->integer('s_number');
             $table->timestamps();
         });

@@ -63,7 +63,7 @@
             <table class="tables_table">
                 <thead>
                     <tr>
-                        <th>Table ID</th>
+                        <th>ID</th>
                         <th>Table Name</th>
                         <th>Columns</th>
                         <th>Rows</th>
