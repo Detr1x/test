@@ -24,11 +24,7 @@
             <a href="{{ route('tables') }}" style="color:#5a6ebf">Tables</a>
         </nav>
         <div class="logout">
-            <a href="{{ route('logout') }}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="#475695" d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9v-62.1h-128c-17.7 0-32-14.3-32-32v-64c0-17.7 14.3-32 32-32h128v-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96H96c-17.7 0-32 14.3-32 32v256c0 17.7 14.3 32 32 32h64c17.7 0 32 14.3 32 32s-14.3 32-32 32H96c-53 0-96-43-96-96V128C0 75 43 32 96 32h64c17.7 0 32 14.3 32 32s-14.3 32-32 32z" />
-                </svg>
-            </a>
+            <a href="{{ route('logout') }}">&#x2716;</a>
         </div>
     </header>
     <div class="content">
@@ -74,26 +70,22 @@
     </div>
     
     <script>
-       document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById('add-row').addEventListener('click', function () {
-        let tableBody = document.getElementById('table-body');
-        let rowCount = tableBody.getElementsByTagName('tr').length;
+  document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("add-row").addEventListener("click", function () {
+        let tableBody = document.getElementById("table-body");
+        let rowCount = tableBody.getElementsByTagName("tr").length;
         let columns = JSON.parse(tableBody.dataset.columns);
 
-        let accessInput = document.getElementById('access-input');
-        let hierarchyInput = document.getElementById('hierarchy-input');
-
-        if (!accessInput || !hierarchyInput) {
-            console.error("Access or Hierarchy input not found!");
-            return;
-        }
+        let accessInput = document.getElementById("access-input");
+        let hierarchyInput = document.getElementById("hierarchy-input");
 
         let accessValue = accessInput.value;
         let hierarchyValue = hierarchyInput.value;
 
         let parentHierarchyToken = "";
-        let rows = tableBody.getElementsByTagName('tr');
+        let rows = tableBody.getElementsByTagName("tr");
 
+        // Поиск родительского элемента
         for (let i = rowCount - 1; i >= 0; i--) {
             let hierarchyCell = rows[i].querySelector('[name^="data"][name$="[hierarchy]"]');
             let tokenCell = rows[i].querySelector('[name^="data"][name$="[hierarchy_token]"]');
@@ -102,31 +94,43 @@
                 let rowHierarchy = hierarchyCell.value;
                 let rowToken = tokenCell.value;
 
-                if ((hierarchyValue === "header" && rowHierarchy === "main_header") ||
+                if (
+                    (hierarchyValue === "header" && rowHierarchy === "main_header") ||
                     (hierarchyValue === "sub_header" && rowHierarchy === "header") ||
-                    (hierarchyValue === "sub_sub_header" && rowHierarchy === "sub_header")) {
+                    (hierarchyValue === "sub_sub_header" && rowHierarchy === "sub_header")
+                ) {
                     parentHierarchyToken = rowToken;
                     break;
                 }
             }
         }
 
-        let newRow = document.createElement('tr');
+        let newRow = document.createElement("tr");
         let hierarchyToken = `row_${Date.now()}`;
 
-        columns.forEach(column => {
-            let newCell = document.createElement('td');
-            let newInput = document.createElement('input');
+        columns.forEach((column) => {
+            let newCell = document.createElement("td");
+            let newInput = document.createElement("input");
 
-            newInput.type = 'text';
+            newInput.type = "number";
             newInput.name = `data[${rowCount}][${column.column_token}]`;
-            newInput.setAttribute('data-type', column.type);
+            newInput.setAttribute("data-type", column.type);
+            newInput.setAttribute("data-column-token", column.column_token);
+            newInput.setAttribute("autocomplete", "off"); // Отключаем автозаполнение
+            newInput.value = ""; // Начальное значение пустое
+
+            // Добавление обработчика события
+            newInput.addEventListener("input", function () {
+                updateParentSum(newInput);
+            });
+
+            newInput.setAttribute("data-old-value", "0"); // Храним старое значение
 
             newCell.appendChild(newInput);
             newRow.appendChild(newCell);
         });
 
-        let hiddenCell = document.createElement('td');
+        let hiddenCell = document.createElement("td");
         hiddenCell.innerHTML = `
             <input type="hidden" name="data[${rowCount}][access]" value="${accessValue}">
             <input type="hidden" name="data[${rowCount}][hierarchy]" value="${hierarchyValue}">
@@ -138,7 +142,50 @@
 
         tableBody.appendChild(newRow);
     });
+
+    // Функция для обновления суммы родителя
+    function updateParentSum(inputElement) {
+        let row = inputElement.closest("tr");
+        let rowId = row.querySelector('[name$="[hierarchy_token]"]').value;
+        let parentInput = row.querySelector('[name$="[parent_hierarchy_token]"]');
+        let parentId = parentInput ? parentInput.value : null;
+        let columnToken = inputElement.dataset.columnToken;
+
+        let newValue = inputElement.value.trim() === "" ? 0 : parseInt(inputElement.value) || 0;
+        let oldValue = parseInt(inputElement.getAttribute("data-old-value")) || 0;
+
+        let diff = newValue - oldValue;
+
+        // Обновляем сохранённое значение, чтобы предотвратить дублирование
+        inputElement.setAttribute("data-old-value", newValue);
+
+        if (diff === 0) return; // Если нет изменений, ничего не делаем
+
+        // Рекурсивно обновляем родителей
+        function propagateSums(parentId, columnToken, diff) {
+            if (!parentId || diff === 0) return;
+
+            let parentRow = [...document.querySelectorAll("#table-body tr")].find(row =>
+                row.querySelector(`[name$="[hierarchy_token]"]`)?.value === parentId
+            );
+
+            if (!parentRow) return;
+
+            let parentInput = parentRow.querySelector(`input[data-column-token="${columnToken}"]`);
+            if (parentInput) {
+                let parentValue = parseInt(parentInput.value) || 0;
+                parentInput.value = parentValue + diff;
+                parentInput.setAttribute("data-old-value", parentInput.value);
+            }
+
+            let grandparentId = parentRow.querySelector('[name$="[parent_hierarchy_token]"]')?.value;
+            propagateSums(grandparentId, columnToken, diff);
+        }
+
+        propagateSums(parentId, columnToken, diff);
+    }
 });
+
 
     </script>
 </body>
