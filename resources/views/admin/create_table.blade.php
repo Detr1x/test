@@ -61,7 +61,7 @@
             </div>
             <div class="input">
                 <label for="access">Access:</label>
-                <input type="text" id="association" name="access" readonly>
+                <input type="text" id="access" name="access">
                 <ul class="dropdown">
                     <li data-value="ОЛИЙ ТАЪЛИМ">ОЛИЙ ТАЪЛИМ</li>
                     <li data-value="КАСБИЙ ТАЪЛИМ">КАСБИЙ ТАЪЛИМ</li>
@@ -76,46 +76,49 @@
                     <li data-value="ИЖРО ИНТИЗОМИ">ИЖРО ИНТИЗОМИ</li>
                 </ul>
             </div>
+            <input type="hidden" id="hidden_access" name="access">
+
             <button type="submit">Create</button>
         </form>
     </div>
     <script>
-           document.addEventListener("DOMContentLoaded", function () {
-    console.log("JS загружен");
-
-    const input = document.querySelector("#association");
-    const dropdown = document.querySelector(".dropdown");
-
-    if (!input || !dropdown) {
-        console.log("Элементы не найдены");
-        return;
-    }
-
-    // При клике на поле — показываем список
-    input.addEventListener("click", function () {
-        console.log("Клик по инпуту association");
-        dropdown.style.display = "block";
-    });
-
-    // Выбор элемента из списка
-    dropdown.addEventListener("click", function (event) {
-        if (event.target.tagName === "LI") {
-            input.value = event.target.getAttribute("data-value");
-            dropdown.style.display = "none";
-        }
-    });
-
-    // Закрытие при клике вне списка и инпута
-    document.addEventListener("click", function (event) {
-        if (!input.contains(event.target) && !dropdown.contains(event.target)) {
-            console.log("Клик вне, скрываем список");
-            dropdown.style.display = "none";
-        }
-    });
-});
-
-
-    </script>
+        document.addEventListener("DOMContentLoaded", function () {
+            console.log("JS загружен");
+        
+            const input = document.querySelector("#access");
+            const hiddenInput = document.querySelector("#hidden_access");
+            const dropdown = document.querySelector(".dropdown");
+        
+            if (!input || !dropdown || !hiddenInput) {
+                console.log("Элементы не найдены");
+                return;
+            }
+        
+            // При клике на поле — показываем список
+            input.addEventListener("click", function () {
+                console.log("Клик по инпуту access");
+                dropdown.style.display = "block";
+            });
+        
+            // Выбор элемента из списка
+            dropdown.addEventListener("click", function (event) {
+                if (event.target.tagName === "LI") {
+                    input.value = event.target.getAttribute("data-value");
+                    hiddenInput.value = input.value; // Заполняем скрытое поле
+                    dropdown.style.display = "none";
+                }
+            });
+        
+            // Закрытие при клике вне списка и инпута
+            document.addEventListener("click", function (event) {
+                if (!input.contains(event.target) && !dropdown.contains(event.target)) {
+                    console.log("Клик вне, скрываем список");
+                    dropdown.style.display = "none";
+                }
+            });
+        });
+        </script>
+        
 </body>
 
 </html>

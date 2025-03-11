@@ -9,7 +9,7 @@ class Tables extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['table_token', 'name'];
+    protected $fillable = ['table_token', 'name', 'access'];
 
     // Связь с колонками (одна таблица -> много колонок)
     public function columns()

@@ -100,11 +100,12 @@ class AdminController extends Controller
         $table_token = Str::uuid();
         $request->validate([
             'name' => 'required|string|max:255',
+            'access'=> 'required|string|max:255',
         ]);
-
         Tables::create([
             'table_token' => $table_token,
             'name' => $request->name,
+            'access'=> $request->access,
         ]);
 
         return redirect()->route('admin.create_table.columns', ['token' => $table_token]);
@@ -119,7 +120,6 @@ class AdminController extends Controller
             'columns.*.type' => 'required|string|max:255',
             'columns.*.s_number' => 'required|integer',
         ]);
-        
         foreach ($validated['columns'] as $index => $columnData) {
             Columns::create([
                 'table_token' => $token,
