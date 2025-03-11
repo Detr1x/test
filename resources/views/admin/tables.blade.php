@@ -52,7 +52,7 @@
 
     </header>
     <div class="content">
-        <div class="table_container">
+        <div class="tables_container">
             <div class="actions-bar">
                 <input id="table-search-bar" type="text" placeholder="Search tables..."  autocomplete="off"/>
                 <div id="tables-results" class="search-results"></div>
@@ -76,12 +76,15 @@
         <td>{{ $table->id }}</td>
         <td>{{ $table->name }}</td>
         <td>{{ $table->columns_count }}</td>
-        <td>{{ $table->name }}</td>
-        <td>{{ $table->id }}</td>
+        <td>{{ $table->rows_count }}</td>
+        <td><a href="{{ route('export.table', ['tableToken' => $table->table_token]) }}" class="btn create">
+            Экспорт в Excel
+        </a>
+        </td>
     </tr>
 @empty
     <tr>
-        <td colspan="8" class="text-center">No users found.</td>
+        <td colspan="8" class="text-center">No tables found.</td>
     </tr>
 @endforelse
 

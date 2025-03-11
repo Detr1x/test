@@ -3,6 +3,8 @@
 use GuzzleHttp\Middleware;
 use Illuminate\Support\Facades\Route;
 use App\Http\Middleware\CheckAdmin;
+use App\Exports\TableExport;
+use Maatwebsite\Excel\Facades\Excel;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -15,9 +17,7 @@ use App\Http\Middleware\CheckAdmin;
 */
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', function () {
-        return view('welcome');
-    });
+    Route::get('/', 'App\Http\Controllers\UserController@index');
     Route::get('/logout', 'App\Http\Controllers\AuthController@logout')
         ->name('logout');
 });
@@ -61,5 +61,10 @@ Route::middleware(['admin'])->group(function () {
     Route::get('/search-users', 'App\Http\Controllers\AdminController@searchUsers');
     Route::get('/search-tables', 'App\Http\Controllers\AdminController@searchTables');
 
+
+
+    Route::get('/export/{tableToken}', function ($tableToken) {
+    return Excel::download(new TableExport($tableToken), 'table.xlsx');
+    })->name('export.table');
 
 });

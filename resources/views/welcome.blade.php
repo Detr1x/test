@@ -12,6 +12,15 @@
 </head>
 
 <body>
-    1213
+    <div class="container">
+        <h1>Доступные таблицы</h1>
+        
+        @foreach ($tables as $table)
+            <div class="table-container">
+                <h2>{{ $table->name }}</h2>
+                <a href="{{ route('tables.show', $table->table_token) }}" class="btn btn-primary">Открыть</a>
+            </div>
+        @endforeach
+    </div>
 </body>
 </html>

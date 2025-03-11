@@ -52,7 +52,7 @@
 
     </header>
     <div class="content">
-        <div class="table_container">
+        <div class="users_container">
             <div class="actions-bar">
                 <input id="user-search-bar" type="text" placeholder="Search users..."  autocomplete="off"/>
                 <div id="users-results" class="search-results"></div>

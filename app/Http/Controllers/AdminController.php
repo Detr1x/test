@@ -23,9 +23,16 @@ class AdminController extends Controller
 
     public function showTables()
     {
-        $tables = Tables::withCount('columns')->get();
+        $tables = Tables::with(['columns', 'rows'])->withCount('columns')->get();
+    
+        // Добавляем rows_count как max(s_number)
+        $tables->each(function ($table) {
+            $table->rows_count = $table->rows ? $table->rows->max_rows : 0;
+        });
+    
         return view('admin.tables', compact('tables'));
     }
+    
 
     public function showUsers()
     {
