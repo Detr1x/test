@@ -112,19 +112,25 @@
             let newCell = document.createElement("td");
             let newInput = document.createElement("input");
 
-            newInput.type = "number";
+            // Если type === "Unit", делаем input number, иначе text
+            if (column.type === "Unit") {
+                newInput.type = "number";
+            } else {
+                newInput.type = "text";
+            }
+
             newInput.name = `data[${rowCount}][${column.column_token}]`;
             newInput.setAttribute("data-type", column.type);
             newInput.setAttribute("data-column-token", column.column_token);
             newInput.setAttribute("autocomplete", "off"); // Отключаем автозаполнение
             newInput.value = ""; // Начальное значение пустое
 
-            // Добавление обработчика события
-            newInput.addEventListener("input", function () {
-                updateParentSum(newInput);
-            });
-
-            newInput.setAttribute("data-old-value", "0"); // Храним старое значение
+            if (column.type === "Unit") {
+                newInput.addEventListener("input", function () {
+                    updateParentSum(newInput);
+                });
+                newInput.setAttribute("data-old-value", "0"); // Храним старое значение
+            }
 
             newCell.appendChild(newInput);
             newRow.appendChild(newCell);
