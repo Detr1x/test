@@ -51,7 +51,7 @@
 
     </header>
     <div class="content">
-        <form action="{{ route('admin.create_table_data.store', ['token' => $table->table_token]) }}" method="POST">
+        <form action="{{ route('admin.create_table.data_store', ['token' => $table->table_token]) }}" method="POST">
             @csrf
             <div class="table_container">
                 <div class="actions-bar">

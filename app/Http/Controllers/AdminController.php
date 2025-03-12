@@ -24,15 +24,14 @@ class AdminController extends Controller
     public function showTables()
     {
         $tables = Tables::with(['columns', 'rows'])->withCount('columns')->get();
-    
+
         // Добавляем rows_count как max(s_number)
         $tables->each(function ($table) {
             $table->rows_count = $table->rows ? $table->rows->max_rows : 0;
         });
-    
+
         return view('admin.tables', compact('tables'));
     }
-    
 
     public function showUsers()
     {
@@ -56,6 +55,13 @@ class AdminController extends Controller
         $columns = Columns::where('table_token', $token)->orderBy('s_number')->get();
 
         return view('admin.create_table_columns', compact('table', 'columns'));
+    }
+    public function showTableTitlesCreateForm($token)
+    {
+        $table = Tables::where('table_token', $token)->firstOrFail();
+        $columns = Columns::where('table_token', $token)->orderBy('s_number')->get();
+
+        return view('admin.create_table_titles', compact('table', 'columns'));
     }
 
     public function showTableDataFillingForm($token)
@@ -100,12 +106,12 @@ class AdminController extends Controller
         $table_token = Str::uuid();
         $request->validate([
             'name' => 'required|string|max:255',
-            'access'=> 'required|string|max:255',
+            'access' => 'required|string|max:255',
         ]);
         Tables::create([
             'table_token' => $table_token,
             'name' => $request->name,
-            'access'=> $request->access,
+            'access' => $request->access,
         ]);
 
         return redirect()->route('admin.create_table.columns', ['token' => $table_token]);
@@ -113,7 +119,7 @@ class AdminController extends Controller
 
     public function columns_store($token, Request $request)
     {
-        
+
         $validated = $request->validate([
             'columns' => 'required|array',
             'columns.*.name' => 'required|string|max:255',
@@ -130,9 +136,57 @@ class AdminController extends Controller
             ]);
         }
 
-        return redirect()->route('admin.create_table_data', ['token' => $token]);
+        return redirect()->route('admin.create_table.titles', ['token' => $token]);
     }
-
+    public function titles_store(Request $request, $tableToken)
+    {
+        try {
+            \Log::info('Request Data: ', $request->all());
+    
+            $validatedData = $request->validate([
+                'data' => 'required|array',
+                'data.*.values' => 'required|array',
+                'data.*.method' => 'required|string',
+                'data.*.hierarchy_token' => 'required|string',
+                'data.*.hierarchy_level' => 'required|string',
+                'data.*.s_number' => 'required|integer',
+                'data.*.parent_hierarchy_token' => 'nullable|string',
+            ]);
+    
+            $processedData = [];
+    
+            foreach ($validatedData['data'] as $row) {
+                foreach ($row['values'] as $columnToken => $dataValue) {
+                    $processedData[] = [
+                        'table_token' => $tableToken,  // ✅ Добавляем table_token
+                        'column_token' => $columnToken,
+                        'hierarchy_token' => $row['hierarchy_token'],
+                        'parent_hierarchy_token' => $row['parent_hierarchy_token'],
+                        'data' => $dataValue,
+                        'type' => 'Unit',  // Замените на реальный тип данных, если нужно
+                        'hierarchy_level' => $row['hierarchy_level'],
+                        's_number' => $row['s_number'],
+                        'method' => $row['method'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+    
+            \Log::info('Final Processed Data: ', $processedData);
+    
+            // Вставляем данные в таблицу column_data
+            Column_Data::insert($processedData);
+    
+            return redirect()->route('admin.create_table.data', ['token' => $tableToken]);
+        } catch (\Exception $e) {
+            \Log::error('Error in titles_store: ', ['message' => $e->getMessage()]);
+            return response()->json(['error' => 'An error occurred'], 500);
+        }
+    }
+    
+    
+    
     public function filling_store($token, Request $request)
     {
         DB::beginTransaction();  // Начало транзакции
@@ -164,7 +218,7 @@ class AdminController extends Controller
                 }
 
                 foreach ($row as $column_token => $value) {
-                    if (in_array($column_token, ['access', 'hierarchy', 'hierarchy_token', 'parent_hierarchy_token', 'table_token', 's_number'])) {
+                    if (in_array($column_token, [ 'hierarchy', 'hierarchy_token', 'parent_hierarchy_token', 'table_token', 's_number'])) {
                         continue;
                     }
 
@@ -181,7 +235,6 @@ class AdminController extends Controller
                     $hierarchyData[$hierarchyToken]['parent'] = $parentToken;
                     $hierarchyData[$hierarchyToken]['level'] = $hierarchy;
                     $hierarchyData[$hierarchyToken]['s_number'] = $index + 1;
-                    $hierarchyData[$hierarchyToken]['access'] = $access;
                 }
             }
 
@@ -191,14 +244,13 @@ class AdminController extends Controller
             foreach ($hierarchyData as $hierarchy_token => $item) {
                 foreach ($item['columns'] as $column_token => $column) {
                     if ($column['value'] !== null) {
-                        Log::info('Cохраняем', [
+                        Log::info('Сохраняем', [
                             'table_token' => $table_token,
                             'column_token' => $column_token,
                             'hierarchy_token' => $hierarchy_token,
                             'parent_hierarchy_token' => $item['parent'],
                             'data' => $column['value'],
                             'type' => $column['type'],
-                            'access' => $item['access'],
                             'hierarchy_level' => $item['level'],
                             's_number' => $item['s_number'],
                         ]);
@@ -210,7 +262,6 @@ class AdminController extends Controller
                             'parent_hierarchy_token' => $item['parent'],
                             'data' => $column['value'],
                             'type' => $column['type'],
-                            'access' => $item['access'],
                             'hierarchy_level' => $item['level'],
                             's_number' => $item['s_number'],
                         ];
@@ -243,7 +294,6 @@ class AdminController extends Controller
                                     'parent_hierarchy_token' => $hierarchy_token,
                                     'data' => $column['value'],
                                     'type' => $column['type'],
-                                    'access' => $child_item['access'],
                                     'hierarchy_level' => $child_item['level'],
                                     's_number' => $child_item['s_number'],
                                 ];
@@ -273,10 +323,6 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Ошибка сохранения данных.');
         }
     }
-
-
-
-
 
     public function searchUsers(Request $request)
     {
@@ -316,6 +362,7 @@ class AdminController extends Controller
 
         return response()->json($tables);
     }
+
     public function getHierarchy(Request $request)
     {
         $level = $request->query('level');

@@ -28,17 +28,11 @@
         </div>
     </header>
     <div class="content">
-        <form action="{{ route('admin.create_table_data.store', ['token' => $table->table_token]) }}" method="POST">
+        <form action="{{ route('admin.create_table.data_store', ['token' => $table->table_token]) }}" method="POST">
             @csrf
             <div class="create_column_data_container">
                 <div class="actions-bar">
                     <div class="input-group">
-                        <select id="access-input" class="dropdown">
-                            <option value="">Select Access</option>
-                            @foreach ($uniqueAccessValues as $access)
-                                <option value="{{ $access }}">{{ $access }}</option>
-                            @endforeach
-                        </select>
                         <select id="hierarchy-input" class="dropdown">
                             <option value="">Select Hierarchy</option>
                             <option value="main_header">Main Header</option>
@@ -76,10 +70,8 @@
         let rowCount = tableBody.getElementsByTagName("tr").length;
         let columns = JSON.parse(tableBody.dataset.columns);
 
-        let accessInput = document.getElementById("access-input");
         let hierarchyInput = document.getElementById("hierarchy-input");
 
-        let accessValue = accessInput.value;
         let hierarchyValue = hierarchyInput.value;
 
         let parentHierarchyToken = "";
@@ -138,7 +130,6 @@
 
         let hiddenCell = document.createElement("td");
         hiddenCell.innerHTML = `
-            <input type="hidden" name="data[${rowCount}][access]" value="${accessValue}">
             <input type="hidden" name="data[${rowCount}][hierarchy]" value="${hierarchyValue}">
             <input type="hidden" name="data[${rowCount}][hierarchy_token]" value="${hierarchyToken}">
             <input type="hidden" name="data[${rowCount}][parent_hierarchy_token]" value="${parentHierarchyToken}">

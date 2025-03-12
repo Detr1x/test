@@ -43,6 +43,7 @@ Route::middleware(['admin'])->group(function () {
         ->name('create_user');
     Route::post('/create_user', 'App\Http\Controllers\AdminController@create_user')
         ->name('create_user');
+
     Route::get('/create_table', 'App\Http\Controllers\AdminController@showTableCreateForm')
         ->name('create_table');
     Route::post('/create_table', 'App\Http\Controllers\AdminController@create_table')
@@ -53,10 +54,15 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/create_table/{token}/columns/store', 'App\Http\Controllers\AdminController@columns_store')
         ->name('admin.create_table.columns_store');
 
+    Route::get('/admin/create_table/{token}/titles', 'App\Http\Controllers\AdminController@showTableTitlesCreateForm')
+        ->name('admin.create_table.titles');
+    Route::post('/admin/create_table/{token}/titles/store', 'App\Http\Controllers\AdminController@titles_store')
+        ->name('admin.create_table.titles_store');
+
     Route::get('/admin/create_table/{token}/filling', 'App\Http\Controllers\AdminController@showTableDataFillingForm')
-        ->name('admin.create_table_data');
+        ->name('admin.create_table.data');
     Route::post('/admin/create_table/{token}/filling/store', 'App\Http\Controllers\AdminController@filling_store')
-        ->name('admin.create_table_data.store');
+        ->name('admin.create_table.data_store');
 
     Route::get('/search-users', 'App\Http\Controllers\AdminController@searchUsers');
     Route::get('/search-tables', 'App\Http\Controllers\AdminController@searchTables');
@@ -64,7 +70,7 @@ Route::middleware(['admin'])->group(function () {
 
 
     Route::get('/export/{tableToken}', function ($tableToken) {
-    return Excel::download(new TableExport($tableToken), 'table.xlsx');
+    return Excel::download(new TableExport($tableToken), $tableToken . '.xlsx');
     })->name('export.table');
 
 });
