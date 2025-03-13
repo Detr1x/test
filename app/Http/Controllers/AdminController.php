@@ -64,13 +64,22 @@ class AdminController extends Controller
         return view('admin.create_table_titles', compact('table', 'columns'));
     }
 
-    public function showTableDataFillingForm($token)
+    public function showTableDataFillingForm($tableToken)
     {
-        $table = Tables::where('table_token', $token)->firstOrFail();
-        $columns = Columns::where('table_token', $token)->orderBy('s_number')->get();
-        $uniqueAccessValues = User::pluck('association')->unique()->toArray();
+        $table = Tables::where('table_token', $tableToken)->firstOrFail();
 
-        return view('admin.create_table_data', compact('table', 'columns', 'uniqueAccessValues'));
+        // Загружаем столбцы, отсортированные по порядковому номеру
+        $columns = Columns::where('table_token', $tableToken)
+                          ->orderBy('s_number')
+                          ->get();
+    
+        // Загружаем данные колонок с учетом иерархии
+        $rows = Column_Data::where('table_token', $tableToken)
+                          ->orderBy('hierarchy_level') // Сначала главные заголовки
+                          ->orderBy('s_number') // Затем порядок внутри уровней
+                          ->get();
+    
+        return view('admin.create_table_data', compact('table', 'columns', 'rows'));
     }
 
     public function showTable($token)

@@ -57,11 +57,11 @@
             @csrf
             <div class="input">
                 <label for="name">Name:</label>
-                <input type="text" id="name" name="name" required>
+                <input type="text" id="name" name="name" required autocomplete="off">
             </div>
             <div class="input">
                 <label for="access">Access:</label>
-                <input type="text" id="access" name="access">
+                <input type="text" id="access" name="access" autocomplete="off">
                 <ul class="dropdown">
                     <li data-value="ОЛИЙ ТАЪЛИМ">ОЛИЙ ТАЪЛИМ</li>
                     <li data-value="КАСБИЙ ТАЪЛИМ">КАСБИЙ ТАЪЛИМ</li>

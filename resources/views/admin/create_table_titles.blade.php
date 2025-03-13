@@ -37,7 +37,7 @@
                             <option value="" disabled selected>Выберите метод</option>
                             <option value="sum">Сумма</option>
                             <option value="average">Среднее значение</option>
-                            <option value="blank">Na</option>
+                            <option value="empty">empty</option>
                         </select>
                     </div>
                     <div class="btns">
@@ -52,7 +52,6 @@
                                 <th>{{ $column->name }}</th>
                             @endforeach
                             <th>Метод</th>
-                            <th>Действие</th>
                         </tr>
                     </thead>
                     <tbody id="table-body" data-columns='@json($columns)'>
@@ -63,91 +62,105 @@
     </div>
 
     <script>
-document.addEventListener("DOMContentLoaded", function () {
-    document.getElementById("add-row").addEventListener("click", function () {
-        let tableBody = document.getElementById("table-body");
-        let rowCount = tableBody.getElementsByTagName("tr").length;
-        let columns = JSON.parse(tableBody.dataset.columns);
-        let methodSelect = document.getElementById("method-select");
-        let selectedMethod = methodSelect.value;
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("add-row").addEventListener("click", function() {
+    let tableBody = document.getElementById("table-body");
+    let rowCount = tableBody.getElementsByTagName("tr").length;
+    let columns = JSON.parse(tableBody.dataset.columns);
+    let methodSelect = document.getElementById("method-select");
+    let selectedMethod = methodSelect.value; // Получаем выбранное значение метода
 
-        if (!selectedMethod) {
-            alert("Выберите метод перед добавлением строки.");
-            return;
-        }
+    if (!selectedMethod) {
+        alert("Выберите метод перед добавлением строки.");
+        return;
+    }
 
-        let hierarchyToken = `row_${Date.now()}`;
-        let newRow = document.createElement("tr");
+    let hierarchyToken = `row_${Date.now()}`;
+    let newRow = document.createElement("tr");
 
-        columns.forEach((column) => {
-            let newCell = document.createElement("td");
+    // Генерируем ячейки для данных
+    columns.forEach((column) => {
+        let newCell = document.createElement("td");
+        let newInput = document.createElement("input");
+        newInput.name = `data[${rowCount}][values][${column.column_token}]`;
+        newInput.type = column.type === "Unit" ? "number" : "text";
+        newInput.setAttribute("data-type", column.type);
+        newInput.setAttribute("data-column-token", column.column_token);
+        newInput.classList.add("form-control");
 
-            let newInput = document.createElement("input");
-            newInput.name = `data[${rowCount}][values][${column.column_token}]`;
-            newInput.type = column.type === "Unit" ? "number" : "text";
-            newInput.setAttribute("data-type", column.type);
-            newInput.setAttribute("data-column-token", column.column_token);
-            newInput.classList.add("form-control");
-
-            newCell.appendChild(newInput);
-            newRow.appendChild(newCell);
-        });
-
-        let hiddenFields = document.createElement("td");
-        hiddenFields.innerHTML = `
-            <input type="hidden" name="data[${rowCount}][method]" value="${selectedMethod}">
-            <input type="hidden" name="data[${rowCount}][hierarchy_token]" value="${hierarchyToken}">
-            <input type="hidden" name="data[${rowCount}][parent_hierarchy_token]" value="">
-            <input type="hidden" name="data[${rowCount}][hierarchy_level]" value="main_header">
-            <input type="hidden" name="data[${rowCount}][s_number]" value="${rowCount + 1}">
-        `;
-        newRow.appendChild(hiddenFields);
-
-        tableBody.appendChild(newRow);
+        newCell.appendChild(newInput);
+        newRow.appendChild(newCell);
     });
 
-    document.getElementById("form-submit").addEventListener("click", function (event) {
-        event.preventDefault();
-        let formData = new FormData(document.getElementById("data-form"));
-        let structuredData = [];
+    // **Создаём видимую ячейку для метода**
+    let methodCell = document.createElement("td");
+    methodCell.textContent = selectedMethod; // Отображаем метод в ячейке
+    newRow.appendChild(methodCell);
 
-        document.querySelectorAll("#table-body tr").forEach((row, index) => {
-            let rowData = {
-                values: {},
-                column_token: [],
-                type: [],
-                method: row.querySelector(`[name="data[${index}][method]"]`).value,
-                hierarchy_token: row.querySelector(`[name="data[${index}][hierarchy_token]"]`).value,
-                parent_hierarchy_token: row.querySelector(`[name="data[${index}][parent_hierarchy_token]"]`).value,
-                hierarchy_level: row.querySelector(`[name="data[${index}][hierarchy_level]"]`).value,
-                s_number: row.querySelector(`[name="data[${index}][s_number]"]`).value,
-            };
+    // Скрытые поля для передачи данных на сервер
+    let hiddenFields = document.createElement("td");
+    hiddenFields.innerHTML = `
+        <input type="hidden" name="data[${rowCount}][method]" value="${selectedMethod}">
+        <input type="hidden" name="data[${rowCount}][hierarchy_token]" value="${hierarchyToken}">
+        <input type="hidden" name="data[${rowCount}][parent_hierarchy_token]" value="">
+        <input type="hidden" name="data[${rowCount}][hierarchy_level]" value="main_header">
+        <input type="hidden" name="data[${rowCount}][s_number]" value="${rowCount + 1}">
+    `;
+    newRow.appendChild(hiddenFields);
 
-            row.querySelectorAll("input[data-column-token]").forEach((input) => {
-                let columnToken = input.getAttribute("data-column-token");
-                let columnType = input.getAttribute("data-type");
-                
-                rowData.values[columnToken] = input.value || null;
-                rowData.column_token.push(columnToken);
-                rowData.type.push(columnType);
-            });
-
-            structuredData.push(rowData);
-        });
-
-        fetch("/save-data", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ _token: document.querySelector("[name=_token]").value, data: structuredData })
-        })
-        .then(response => response.json())
-        .then(data => console.log(data))
-        .catch(error => console.error(error));
-    });
+    // Добавляем строку в таблицу
+    tableBody.appendChild(newRow);
 });
 
+      
+            document.getElementById("form-submit").addEventListener("click", function(event) {
+                event.preventDefault();
+                let formData = new FormData(document.getElementById("data-form"));
+                let structuredData = [];
 
-        </script>
+                document.querySelectorAll("#table-body tr").forEach((row, index) => {
+                    let rowData = {
+                        values: {},
+                        column_token: [],
+                        type: [],
+                        method: row.querySelector(`[name="data[${index}][method]"]`).value,
+                        hierarchy_token: row.querySelector(
+                            `[name="data[${index}][hierarchy_token]"]`).value,
+                        parent_hierarchy_token: row.querySelector(
+                            `[name="data[${index}][parent_hierarchy_token]"]`).value,
+                        hierarchy_level: row.querySelector(
+                            `[name="data[${index}][hierarchy_level]"]`).value,
+                        s_number: row.querySelector(`[name="data[${index}][s_number]"]`).value,
+                    };
+
+                    row.querySelectorAll("input[data-column-token]").forEach((input) => {
+                        let columnToken = input.getAttribute("data-column-token");
+                        let columnType = input.getAttribute("data-type");
+
+                        rowData.values[columnToken] = input.value || null;
+                        rowData.column_token.push(columnToken);
+                        rowData.type.push(columnType);
+                    });
+
+                    structuredData.push(rowData);
+                });
+
+                fetch("/save-data", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            _token: document.querySelector("[name=_token]").value,
+                            data: structuredData
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch(error => console.error(error));
+            });
+        });
+    </script>
 </body>
 
 </html>

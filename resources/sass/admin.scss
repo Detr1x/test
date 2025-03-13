@@ -524,22 +524,22 @@ body {
             text-align: left;
 
             tr {
+                display: table-row; // Гарантирует, что `tr` ведёт себя корректно
+    width: 100%;
                 th {
-                    padding: 1vh 1vw;
-                    text-align: center;
-                    width: 33.33%;
-                    box-sizing: border-box;
                     padding: 1vh 0.5vw;
-                    font-family: "Inter", sans-serif;
-                    font-size: 1.2vw;
-                    font-style: italic;
-                    font-weight: 800;
-                    letter-spacing: 0.2vw;
+    text-align: center;
+    box-sizing: border-box;
+    font-family: "Inter", sans-serif;
+    font-size: 1.2vw;
+    font-style: italic;
+    font-weight: 800;
+    letter-spacing: 0.2vw;
                     &:first-child {
                         width: 5%;
                     }
                     &:not(:first-child) {
-                        width: calc(95% / var(--columns-count));
+                        width: calc(100% / var(--columns-count));
                     }
                 }
             }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('table_token');
             $table->string('column_token');
-            $table->string('hierarchy_token');
+            $table->string('hierarchy_token')->nullable();
             $table->string('parent_hierarchy_token')->nullable();
             $table->string('data')->nullable();
             $table->string('method')->nullable();
