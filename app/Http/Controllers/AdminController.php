@@ -64,18 +64,58 @@ class AdminController extends Controller
         $columns = Columns::where('table_token', $token)->orderBy('s_number')->get();
         $uniqueAccessValues = User::pluck('association')->unique()->toArray();
 
+<<<<<<< Updated upstream
         return view('admin.create_table_data', compact('table', 'columns', 'uniqueAccessValues'));
     }
 
     public function showTable($token)
+=======
+        return view('admin.create_table_titles', compact('table', 'columns'));
+    }
+
+    public function showTableDataFillingForm($token) 
+>>>>>>> Stashed changes
     {
         $table = Tables::where('table_token', $token)->firstOrFail();
         $columns = Columns::where('table_token', $token)->orderBy('s_number')->get();
-        $columns_data = Column_data::where('table_token', $token)->orderBy('s_number')->get();
-
-        return view('admin.table', compact('table', 'columns', 'columns_data'));
+        
+        // Получаем все main_header и группируем их по s_number
+        $columns_data = Column_data::where('table_token', $token)
+            ->where('hierarchy_level', 'main_header')
+            ->orderBy('s_number')
+            ->get()
+            ->groupBy('s_number');
+    
+        return view('admin.create_table_data', compact('table', 'columns', 'columns_data'));
     }
+    
+    
 
+    public function showTable($table_token)
+    {
+        $table = Tables::where('table_token', $table_token)->firstOrFail();
+        $columns = Columns::where('table_token', $table_token)->orderBy('s_number')->get();
+        $columnData = Column_data::where('table_token', $table_token)->orderBy('s_number')->get();
+    
+        // Группируем данные по `s_number` и `hierarchy_token`
+        $groupedData = [];
+        foreach ($columnData as $row) {
+            if (!isset($groupedData[$row->s_number][$row->hierarchy_token])) {
+                $groupedData[$row->s_number][$row->hierarchy_token] = [
+                    'hierarchy_level' => $row->hierarchy_level,
+                    'parent_hierarchy_token' => $row->parent_hierarchy_token, // <---- Добавлено!
+                ];
+            }
+            $groupedData[$row->s_number][$row->hierarchy_token][$row->column_token] = $row->data;
+        }
+    
+        return view('admin.table', compact('table', 'columns', 'columnData', 'groupedData'));
+    }
+    
+    
+    
+
+    
     public function create_user(Request $request)
     {
         $user_token = Str::uuid();
@@ -135,14 +175,18 @@ class AdminController extends Controller
 
     public function filling_store($token, Request $request)
     {
-        DB::beginTransaction();  // Начало транзакции
-        $table_token = $token;
+        DB::beginTransaction();
         try {
             $validated = $request->validate([
                 'data' => 'required|array',
-                'data.*' => 'required|array',
+                'data.*.values' => 'required|array',
+                'data.*.method' => 'required|string',
+                'data.*.hierarchy_token' => 'required|string',
+                'data.*.hierarchy_level' => 'required|string',
+                'data.*.parent_hierarchy_token' => 'required|string',
             ]);
             Log::info('Принятые данные:', $validated);
+<<<<<<< Updated upstream
 
             $hierarchyMap = [];
             $hierarchyData = [];
@@ -165,14 +209,32 @@ class AdminController extends Controller
 
                 foreach ($row as $column_token => $value) {
                     if (in_array($column_token, ['access', 'hierarchy', 'hierarchy_token', 'parent_hierarchy_token', 'table_token', 's_number'])) {
+=======
+    
+            $maxSNumbers = []; // Кэш для s_number
+    
+            foreach ($validated['data'] as $row) {
+                try {
+                    $hierarchyLevel = $row['hierarchy_level'];
+    
+                    // Пропускаем сохранение main_header
+                    if ($hierarchyLevel === 'main_header') {
+                        Log::info("Пропущена строка с main_header, hierarchy_token: {$row['hierarchy_token']}");
+>>>>>>> Stashed changes
                         continue;
                     }
-
-                    $column = Columns::where('column_token', $column_token)->first();
-                    if (!$column) {
-                        Log::warning("Пропущена колонка с token: $column_token (не найдена)");
-                        continue;
+    
+                    $hierarchyToken = $row['hierarchy_token'];
+                    $parentToken = $row['parent_hierarchy_token'] ?? null;
+                    $method = $row['method'];
+    
+                    // Определяем s_number один раз для данного уровня
+                    if (!isset($maxSNumbers[$hierarchyLevel])) {
+                        $maxSNumbers[$hierarchyLevel] = Column_Data::where('table_token', $token)
+                            ->where('hierarchy_level', $hierarchyLevel)
+                            ->max('s_number') ?? 0;
                     }
+<<<<<<< Updated upstream
 
                     $hierarchyData[$hierarchyToken]['columns'][$column_token] = [
                         'value' => $value,
@@ -203,9 +265,21 @@ class AdminController extends Controller
                             's_number' => $item['s_number'],
                         ]);
 
+=======
+                    $sNumber = ++$maxSNumbers[$hierarchyLevel];
+    
+                    foreach ($row['values'] as $column_token => $value) {
+                        $column = Columns::where('column_token', $column_token)->first();
+                        if (!$column) {
+                            Log::warning("Пропущена колонка с token: $column_token (не найдена)");
+                            continue;
+                        }
+    
+>>>>>>> Stashed changes
                         $columnData = [
-                            'table_token' => $table_token,
+                            'table_token' => $token,
                             'column_token' => $column_token,
+<<<<<<< Updated upstream
                             'hierarchy_token' => $hierarchy_token,
                             'parent_hierarchy_token' => $item['parent'],
                             'data' => $column['value'],
@@ -213,22 +287,33 @@ class AdminController extends Controller
                             'access' => $item['access'],
                             'hierarchy_level' => $item['level'],
                             's_number' => $item['s_number'],
+=======
+                            'hierarchy_token' => $hierarchyToken,
+                            'parent_hierarchy_token' => $parentToken,
+                            'data' => $value,
+                            'type' => $column->type,
+                            'hierarchy_level' => $hierarchyLevel,
+                            's_number' => $sNumber,
+                            'method' => $method
+>>>>>>> Stashed changes
                         ];
-
+    
                         Log::info("Сохраняем данные в Column_Data", $columnData);
-
-                        // Проверка, существует ли уже такая запись
-                        if (
-                            !Column_Data::where('hierarchy_token', $hierarchy_token)
-                                ->where('column_token', $column_token)
-                                ->where('parent_hierarchy_token', $item['parent'])
-                                ->exists()
-                        ) {
-                            Column_Data::create($columnData);
-                        }
+    
+                        Column_Data::updateOrCreate(
+                            [
+                                'hierarchy_token' => $hierarchyToken,
+                                'column_token' => $column_token
+                            ],
+                            $columnData
+                        );
                     }
+                } catch (\Exception $e) {
+                    Log::error("Ошибка обработки строки с hierarchy_token: $hierarchyToken. " . $e->getMessage());
+                    continue; // Пропустить проблемную строку, но не прерывать всю операцию
                 }
             }
+<<<<<<< Updated upstream
 
             // Обработка дочерних элементов
             foreach ($hierarchyData as $hierarchy_token => $item) {
@@ -268,11 +353,19 @@ class AdminController extends Controller
             DB::commit();  // Завершаем транзакцию
 
             return redirect('admin/tables')->with('success', 'Данные успешно сохранены!');
+=======
+    
+            DB::commit();
+            return redirect()->route('tables')->with('success', 'Данные успешно сохранены!');
+>>>>>>> Stashed changes
         } catch (\Exception $e) {
-            Log::error('Ошибка сохранения данных: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Ошибка сохранения данных.');
+            DB::rollBack();
+            Log::error('Ошибка сохранения данных: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return redirect()->back()->withErrors('Ошибка сохранения данных!');
         }
     }
+    
+
 
 
 
