@@ -3,187 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Admin panel</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .btn {
-            cursor: pointer;
-            padding: 5px 10px;
-            margin: 2px;
-        }
-        .add-row {
-            background-color: #5cb85c;
-            color: white;
-            border: none;
-        }
-        .remove-row {
-            background-color: #d9534f;
-            color: white;
-            border: none;
-        }
+        body { font-family: 'Inter', sans-serif; margin: 20px; background: #f4f4f9; }
+        .hierarchy-container { max-width: 800px; margin: auto; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); }
+        .row { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #ddd; position: relative; transition: 0.3s ease-in-out; }
+        .row.hidden { display: none; }
+        .toggle-btn { cursor: pointer; margin-right: 10px; font-weight: bold; width: 20px; text-align: center; }
+        .toggle-btn:hover { color: #007bff; }
+        .cell { padding: 5px; flex-grow: 1; }
+        .hierarchy-level-main_header { padding-left: 0; font-weight: 600; }
+        .hierarchy-level-header { padding-left: 20px; background-color: #f8f8f8; }
+        .hierarchy-level-sub_header { padding-left: 40px; background-color: #f0f0f0; }
+        .hierarchy-level-sub_sub_header { padding-left: 85px; background-color: #e8e8e8; }
     </style>
 </head>
 <body>
+    <div class="hierarchy-container">
+        @foreach($groupedData as $s_number => $rows)
+            @foreach($rows as $columnsData)
+                @php
+                    $hierarchy_token = $columnsData['hierarchy_token'];
+                    $parentToken = $columnsData['parent_hierarchy_token'] ?? null;
+                    $isMainHeader = ($columnsData['hierarchy_level'] === 'main_header');
+                    
+                    // Проверяем, есть ли у элемента дети
+                    $hasChildren = collect($groupedData)
+                        ->flatten(1)
+                        ->where('parent_hierarchy_token', $hierarchy_token)
+                        ->isNotEmpty();
+                @endphp
 
-<header>
-    <h1>Welcome {{ auth()->user()->uname }}!</h1>
-    <nav class="nav">
-        <a href="{{ route('admin') }}">Dashboard</a>
-        <a href="{{ route('users') }}">Users</a>
-        <a href="{{ route('tables') }}" style="color:#5a6ebf">Tables</a>
-    </nav>
-    <div class="logout">
-        <a href="{{ route('logout') }}">&#x2716;</a>
-    </div>
-</header>
+                <div class="row hierarchy-level-{{ $columnsData['hierarchy_level'] }} 
+                            {{ $parentToken ? 'hidden' : '' }}" 
+                    data-hierarchy="{{ $hierarchy_token }}"
+                    data-parent="{{ $parentToken ?? '' }}">
 
-<div class="content">
-    <h2>Создание структуры данных</h2>
-    
-    <form action="{{  route('admin.create_table.titles_store', ['token' => $table->table_token])}}" method="POST">
-        @csrf
-        <table class="table_table">
-            <thead>
-                <tr>
-                    <th></th> <!-- Кнопка "+" -->
-                    @foreach ($columns as $column)
-                        <th>{{ $column->name }}</th>
+                    <span class="toggle-btn">{{ $hasChildren ? '+' : '' }}</span>
+
+                    @foreach($columns as $column)
+                        <span class="cell">{{ $columnsData[$column->column_token] ?? '' }}</span>
                     @endforeach
-                    <th>Метод</th>
-                    <th></th> <!-- Кнопка "-" -->
-                </tr>
-            </thead>
-            <tbody id="table-body">
-                @foreach ($rows as $row)
-                    @php
-                        $rowData = is_array($row->data) ? $row->data : json_decode($row->data, true) ?? [];
-                    @endphp
-                    <tr class="hierarchy-row" 
-                        data-hierarchy-level="{{ $row->hierarchy_level }}" 
-                        data-hierarchy-token="{{ $row->hierarchy_token }}" 
-                        data-parent-token="{{ $row->parent_hierarchy_token ?? '' }}"
-                        style="padding-left: {{ 20 * (int) $row->hierarchy_level }}px;">
+                </div>
+            @endforeach
+        @endforeach
+    </div>
 
-                        <td>
-                            @if ($row->hierarchy_level !== 'sub_sub_header')
-                                <button type="button" class="btn add-row">+</button>
-                            @endif
-                        </td>
-
-                        @foreach ($columns as $column)
-                            <td>
-                                <input type="text" 
-                                       name="data[{{ $row->id }}][values][{{ $column->column_token }}]" 
-                                       value="{{ $rowData[$column->column_token] ?? '' }}"
-                                       data-column-token="{{ $column->column_token }}">
-                            </td>
-                        @endforeach
-
-                        <td>{{ $row->method }}</td>
-                        <td><button type="button" class="btn remove-row">-</button></td>
-                    </tr>
-                @endforeach
-            </tbody>
-        </table>
-
-        <button type="submit" class="btn save">Сохранить</button>
-    </form>
-</div>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        let tableBody = document.getElementById("table-body");
-
-        function getNextLevel(level) {
-            const hierarchyOrder = ['main_header', 'header', 'sub_header', 'sub_sub_header'];
-            let currentIndex = hierarchyOrder.indexOf(level);
-            return currentIndex !== -1 && currentIndex < hierarchyOrder.length - 1 ? hierarchyOrder[currentIndex + 1] : null;
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Функция для проверки, есть ли у строки дочерние элементы
+        function hasChildren(token) {
+            return document.querySelector(`.row[data-parent='${token}']`) !== null;
         }
 
-        function applyPadding(row, level) {
-            let paddingLeft = 20 * getHierarchyIndex(level);
-            row.style.paddingLeft = `${paddingLeft}px`;
-        }
+        // Обрабатываем все строки
+        document.querySelectorAll(".row").forEach(row => {
+            const hierarchyToken = row.dataset.hierarchy;
 
-        function getHierarchyIndex(level) {
-            let hierarchyOrder = ['main_header', 'header', 'sub_header', 'sub_sub_header'];
-            return hierarchyOrder.indexOf(level);
-        }
-
-        function insertAfter(referenceNode, newNode) {
-            if (referenceNode.nextSibling) {
-                referenceNode.parentNode.insertBefore(newNode, referenceNode.nextSibling);
-            } else {
-                referenceNode.parentNode.appendChild(newNode);
+            // Проверяем, есть ли у элемента дети
+            if (!hasChildren(hierarchyToken)) {
+                const toggleBtn = row.querySelector(".toggle-btn");
+                if (toggleBtn) toggleBtn.remove(); // Удаляем кнопку, если нет детей
             }
-        }
+        });
 
-        function addRowListeners(row) {
-            row.querySelector(".add-row")?.addEventListener("click", function() {
-                let parentRow = this.closest("tr");
-                let parentLevel = parentRow.dataset.hierarchyLevel;
-                let parentToken = parentRow.dataset.hierarchyToken;
-                let newLevel = getNextLevel(parentLevel);
-                if (!newLevel) return;
+        // Добавляем обработчик кликов на кнопки `+`
+        document.querySelectorAll(".toggle-btn").forEach(button => {
+            button.addEventListener("click", function () {
+                const parentRow = this.closest(".row");
+                const hierarchyToken = parentRow.dataset.hierarchy;
+                const isOpening = this.textContent === "+";
 
-                let hierarchyToken = `row_${Date.now()}`;
-                let newRow = document.createElement("tr");
-                newRow.classList.add("hierarchy-row");
-                newRow.dataset.hierarchyLevel = newLevel;
-                newRow.dataset.hierarchyToken = hierarchyToken;
-                newRow.dataset.parentToken = parentToken;
+                // Функция для переключения вложенных строк
+                function toggleChildren(token, show) {
+                    document.querySelectorAll(`.row[data-parent='${token}']`).forEach(child => {
+                        child.classList.toggle("hidden", !show);
+                        if (!show) {
+                            const childToken = child.dataset.hierarchy;
+                            toggleChildren(childToken, false);
+                            const toggleBtn = child.querySelector(".toggle-btn");
+                            if (toggleBtn) toggleBtn.textContent = "+";
+                        }
+                    });
+                }
 
-                let plusButton = newLevel !== 'sub_sub_header' ? `<button type="button" class="btn add-row">+</button>` : '';
-
-                let columnsHtml = `@foreach ($columns as $column)
-                        <td><input type="text" name="data[new_${hierarchyToken}][values][{{ $column->column_token }}]"></td>
-                    @endforeach`;
-
-                newRow.innerHTML = `
-                    <td>${plusButton}</td>
-                    ${columnsHtml}
-                    <td>
-                        <select name="data[new_${hierarchyToken}][method]">
-                            <option value="sum">Сумма</option>
-                            <option value="average">Среднее</option>
-                            <option value="Na">Na</option>
-                        </select>
-                    </td>
-                    <td><button type="button" class="btn remove-row">-</button></td>
-                `;
-
-                insertAfter(parentRow, newRow);
-                applyPadding(newRow, newLevel);
-                addRowListeners(newRow);
+                // Открываем/закрываем дочерние элементы
+                toggleChildren(hierarchyToken, isOpening);
+                this.textContent = isOpening ? "−" : "+";
             });
-
-            row.querySelector(".remove-row")?.addEventListener("click", function() {
-                let row = this.closest("tr");
-                let hierarchyToken = row.dataset.hierarchyToken;
-                
-                document.querySelectorAll(`.hierarchy-row[data-parent-token='${hierarchyToken}']`).forEach(childRow => {
-                    childRow.remove();
-                });
-
-                row.remove();
-            });
-        }
-
-        document.querySelectorAll(".hierarchy-row").forEach(addRowListeners);
+        });
     });
-</script>
-
+    </script>
 </body>
 </html>
