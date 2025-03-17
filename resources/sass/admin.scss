@@ -1542,3 +1542,77 @@ body {
     font-weight: bold;
     color: #555;
 }
+.hierarchy-container {
+    max-width: 100%;
+    margin: auto;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #f4f4f4;
+            font-weight: 600;
+        }
+
+        .row {
+            transition: 0.3s ease-in-out;
+
+            &.hidden {
+                display: none;
+            }
+
+            &.hierarchy-level-main_header {
+                font-weight: 600;
+                background: #fff;
+            }
+
+            &.hierarchy-level-header {
+                background: #f8f8f8;
+
+                td {
+                    padding-left: 20px;
+                }
+            }
+
+            &.hierarchy-level-sub_header {
+                background: #f0f0f0;
+
+                td {
+                    padding-left: 40px;
+                }
+            }
+
+            &.hierarchy-level-sub_sub_header {
+                background: #e8e8e8;
+
+                td {
+                    padding-left: 60px;
+                }
+            }
+        }
+    }
+}
+
+.toggle-btn {
+    cursor: pointer;
+    font-weight: bold;
+    text-align: center;
+    width: 20px;
+    margin-right: 10px;
+    transition: 0.2s;
+
+    &:hover {
+        color: #007bff;
+    }
+}
