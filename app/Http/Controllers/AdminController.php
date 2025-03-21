@@ -100,6 +100,7 @@ class AdminController extends Controller
             $groupedData[$row->hierarchy_token] = [
                 'hierarchy_level' => $row->hierarchy_level,
                 'parent_hierarchy_token' => $row->parent_hierarchy_token,
+                'type' => $row->type,
                 's_number' => $row->s_number
             ];
         }
@@ -107,15 +108,35 @@ class AdminController extends Controller
     }
     \Log::info($columnData->pluck('s_number', 'hierarchy_token')->toArray());
 
-
     return view('admin.table', compact('table', 'columns', 'groupedData'));
 }
-
-
-
-    
-    
-    
+public function showEditTableData($table_token)
+    {
+        $table = Tables::where('table_token', $table_token)->firstOrFail();
+        $columns = Columns::where('table_token', $table_token)->orderBy('s_number')->get();
+        $data = Column_Data::where('table_token', $table_token)->get()->groupBy('hierarchy_token');
+        $columnData = Column_data::where('table_token', $table_token)
+        ->orderByRaw("
+            FIELD(hierarchy_level, 'main_header', 'header', 'sub_header', 'sub_sub_header')
+        ")
+        ->orderByRaw("COALESCE(parent_hierarchy_token, hierarchy_token), s_number ASC")
+        ->get();
+        // Группируем данные по hierarchy_token
+    $groupedData = [];
+    foreach ($columnData as $row) {
+        if (!isset($groupedData[$row->hierarchy_token])) {
+            $groupedData[$row->hierarchy_token] = [
+                'hierarchy_level' => $row->hierarchy_level,
+                'parent_hierarchy_token' => $row->parent_hierarchy_token,
+                'method' => $row->method,
+                's_number' => $row->s_number
+            ];
+        }
+        $groupedData[$row->hierarchy_token][$row->column_token] = $row->data;
+    }
+    \Log::info($columnData->pluck('s_number', 'hierarchy_token')->toArray());
+        return view('admin.edit_table_data', compact('table', 'columns', 'data','groupedData'));
+    }
 
 
     public function create_user(Request $request)
@@ -304,6 +325,56 @@ class AdminController extends Controller
             return redirect()->back()->withErrors('Ошибка сохранения данных!');
         }
     }
+    public function updateTableData(Request $request, $table_token)
+{
+    $table = Tables::where('table_token', $table_token)->firstOrFail();
+    $columns = Columns::where('table_token', $table_token)->get();
+
+    $validatedData = $request->validate([
+        'data' => 'required|array',
+        'data.*.hierarchy_token' => 'required|string',
+        'data.*.parent_hierarchy_token' => 'nullable|string',
+        'data.*.hierarchy_level' => 'required|string|in:main_header,header,sub_header,sub_sub_header',
+        'data.*.s_number' => 'required|integer',
+        'data.*.values' => 'required|array',
+    ]);
+    dd($validatedData);
+    foreach ($validatedData['data'] as $row) {
+        foreach ($columns as $column) {
+            $columnToken = $column->column_token;
+            $value = $row['values'][$columnToken] ?? null;
+
+            // Проверяем, существует ли запись с данным hierarchy_token и column_token
+            $columnData = Column_Data::where('table_token', $table_token)
+                ->where('hierarchy_token', $row['hierarchy_token'])
+                ->where('column_token', $columnToken)
+                ->first();
+
+            if ($columnData) {
+                // Обновляем существующую запись
+                $columnData->update([
+                    'parent_hierarchy_token' => $row['parent_hierarchy_token'] ?? null,
+                    'data' => $value,
+                    's_number' => $row['s_number'],
+                    'hierarchy_level' => $row['hierarchy_level'],
+                ]);
+            } else {
+                // Создаём новую запись, если не нашли существующую
+                Column_Data::create([
+                    'table_token' => $table_token,
+                    'column_token' => $columnToken,
+                    'hierarchy_token' => $row['hierarchy_token'],
+                    'parent_hierarchy_token' => $row['parent_hierarchy_token'] ?? null,
+                    'data' => $value,
+                    's_number' => $row['s_number'],
+                    'hierarchy_level' => $row['hierarchy_level'],
+                ]);
+            }
+        }
+    }
+
+    return response()->json(['message' => 'Данные успешно обновлены'], 200);
+}
 
 
 

@@ -64,6 +64,11 @@ Route::middleware(['admin'])->group(function () {
     Route::post('/admin/create_table/{token}/filling/store', 'App\Http\Controllers\AdminController@filling_store')
         ->name('admin.create_table.data_store');
 
+    Route::get('/tables/{table_token}/edit-data', 'App\Http\Controllers\AdminController@showEditTableData')
+        ->name('edit_table_data');
+    Route::post('/tables/{table_token}/update-data', 'App\Http\Controllers\AdminController@updateTableData')
+        ->name('update_table_data');
+        
     Route::get('/search-users', 'App\Http\Controllers\AdminController@searchUsers');
     Route::get('/search-tables', 'App\Http\Controllers\AdminController@searchTables');
 

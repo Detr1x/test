@@ -32,12 +32,14 @@
     </header>
     <div class="actions-bar">
         <div class="btns">
-            <a href="{{route('create_table')}}" class="btn add">Edit</a>
+            <a href="{{route('edit_table_data', ['table_token' => $table->table_token])}}" class="btn add">Edit Data</a>
+            <a href="{{route('create_table')}}" class="btn add">Edit Columns</a>
         </div>
     </div>
     <div class="columns-header" style="--columns-count: {{ count($columns) }};">
+        <span class="toggle-btn"></span>
         @foreach ($columns as $column)
-            <span class="column-title">{{ $column->name }}</span>
+            <span class="column-title" data-type ="{{ $column->type}}">{{ $column->name }}</span>
         @endforeach
     </div>
     <div class="hierarchy-container" style="--columns-count: {{ count($columns) }};">
@@ -46,93 +48,112 @@
             @php
                 $parentToken = $columnsData['parent_hierarchy_token'] ?? null;
                 $isMainHeader = $columnsData['hierarchy_level'] === 'main_header';
-
                 // Проверяем, есть ли дочерние элементы
                 $hasChildren = collect($groupedData)->where('parent_hierarchy_token', $hierarchy_token)->isNotEmpty();
             @endphp
 
             <div class="row hierarchy-level-{{ $columnsData['hierarchy_level'] }} 
                         {{ !$isMainHeader ? 'hidden' : '' }}"
-                data-hierarchy="{{ $hierarchy_token }}" data-parent="{{ $parentToken ?? '' }}" style="--columns-count: {{ count($columns) }};">
+                data-hierarchy="{{ $hierarchy_token }}" data-parent="{{ $parentToken ?? '' }}"  style="--columns-count: {{ count($columns) }};">
 
                 <span class="toggle-btn">{{ $hasChildren ? '+' : '' }}</span>
 
                 @foreach ($columns as $column)
-                    <span class="cell">{{ $columnsData[$column->column_token] ?? '' }}</span>
+                    <span class="cell" data-type ="{{ $column->type}}">{{ $columnsData[$column->column_token] ?? '' }}</span>
                 @endforeach
             </div>
         @endforeach
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            function reorderHierarchy() {
-                const rows = Array.from(document.querySelectorAll(".row"));
-                const container = document.querySelector(".hierarchy-container");
+      document.addEventListener("DOMContentLoaded", function () {
+    function reorderHierarchy() {
+        const rows = Array.from(document.querySelectorAll(".row"));
+        const container = document.querySelector(".hierarchy-container");
+        const tree = {};
+        const rowMap = {};
 
-                // Создаем объект для хранения дочерних элементов
-                const tree = {};
-                const rowMap = {};
+        rows.forEach(row => {
+            const hierarchyToken = row.dataset.hierarchy;
+            const parentToken = row.dataset.parent;
+            rowMap[hierarchyToken] = row;
 
-                rows.forEach(row => {
-                    const hierarchyToken = row.dataset.hierarchy;
-                    const parentToken = row.dataset.parent;
-                    rowMap[hierarchyToken] = row;
+            if (!tree[parentToken]) {
+                tree[parentToken] = [];
+            }
+            tree[parentToken].push(row);
+        });
 
-                    if (!tree[parentToken]) {
-                        tree[parentToken] = [];
-                    }
-                    tree[parentToken].push(row);
-                });
+        function appendChildren(parentToken) {
+            if (!tree[parentToken]) return;
+            tree[parentToken].sort((a, b) => parseInt(a.dataset.s_number, 10) - parseInt(b.dataset.s_number, 10));
 
-                // Функция для рекурсивного добавления элементов в нужном порядке
-                function appendChildren(parentToken) {
-                    if (!tree[parentToken]) return;
+            tree[parentToken].forEach(child => {
+                container.appendChild(child);
+                appendChildren(child.dataset.hierarchy);
+            });
+        }
 
-                    // Сортируем детей по s_number перед вставкой
-                    tree[parentToken].sort((a, b) => parseInt(a.dataset.s_number, 10) - parseInt(b.dataset.s_number,
-                        10));
+        container.innerHTML = "";
+        appendChildren("");
+    }
 
-                    tree[parentToken].forEach(child => {
-                        container.appendChild(child);
-                        appendChildren(child.dataset.hierarchy);
-                    });
+    reorderHierarchy();
+
+    document.querySelectorAll(".toggle-btn").forEach(button => {
+        if (button.textContent.trim() !== "") {
+            button.addEventListener("click", function () {
+                const parentRow = this.closest(".row");
+                const hierarchyToken = parentRow.dataset.hierarchy;
+                const children = document.querySelectorAll(`.row[data-parent='${hierarchyToken}']`);
+
+                const isOpen = children.length > 0 && [...children].some(child => !child.classList.contains("hidden"));
+
+                if (isOpen) {
+                    hideChildren(hierarchyToken);
+                    this.textContent = "+";
+                } else {
+                    children.forEach(child => child.classList.remove("hidden"));
+                    this.textContent = "−";
                 }
+            });
+        }
+    });
 
-                // Очищаем контейнер перед вставкой и запускаем рекурсивную вставку
-                container.innerHTML = "";
-                appendChildren(""); // Начинаем с корневых элементов (у которых `parent_hierarchy_token == ""`)
-            }
-
-            reorderHierarchy();
-
-            // Логика скрытия/отображения вложенных элементов
-            document.querySelectorAll(".toggle-btn").forEach(button => { 
-    if (button.textContent.trim() !== "") {
-        button.addEventListener("click", function() {
-            const parentRow = this.closest(".row");
-            const hierarchyToken = parentRow.dataset.hierarchy;
-            const children = document.querySelectorAll(`.row[data-parent='${hierarchyToken}']`);
-
-            const isOpen = children.length > 0 && [...children].some(child => !child.classList.contains("hidden"));
-
-            if (isOpen) {
-                hideChildren(hierarchyToken);
-                this.textContent = "+";
-            } else {
-                children.forEach(child => child.classList.remove("hidden"));
-                this.textContent = "−";
-            }
+    function hideChildren(parentToken) {
+        document.querySelectorAll(`.row[data-parent='${parentToken}']`).forEach(child => {
+            child.classList.add("hidden");
+            hideChildren(child.dataset.hierarchy);
         });
     }
-});
 
-function hideChildren(parentToken) {
-    document.querySelectorAll(`.row[data-parent='${parentToken}']`).forEach(child => {
-        child.classList.add("hidden");
-        hideChildren(child.dataset.hierarchy); // Рекурсивно скрываем вложенные элементы
-    });
-}
+    function applyDynamicStyles() {
+        const mainHeaders = document.querySelectorAll(".hierarchy-level-main_header");
+        let even = true;
+        const colorMap = {};
+
+        mainHeaders.forEach(header => {
+            const mainColor = even ? "#B4C6E7" : "#BDD7EE";
+            header.style.backgroundColor = mainColor;
+            colorMap[header.dataset.hierarchy] = mainColor;
+            even = !even;
+        });
+
+        document.querySelectorAll(".hierarchy-level-header").forEach(header => {
+            const parentToken = header.dataset.parent;
+            const parentColor = colorMap[parentToken];
+
+            if (parentColor === "#B4C6E7") {
+                header.style.backgroundColor = "#D9E1F2";
+            } else if (parentColor === "#BDD7EE") {
+                header.style.backgroundColor = "#DDEBF7";
+            }
+
+            colorMap[header.dataset.hierarchy] = header.style.backgroundColor;
+        });
+    }
+
+    applyDynamicStyles();
 });
 
     </script>

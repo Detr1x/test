@@ -6,8 +6,7 @@ body {
 }
 
 header {
-    min-width: 100%;
-    width: fit-content;
+    width: 100%;
     height: 10vh;
     display: flex;
     flex-direction: row;
@@ -15,64 +14,66 @@ header {
     justify-content: space-between;
     padding: 0 5%;
     background-color: #e0e0e0;
-
     h1 {
         max-width: max-content;
         max-height: max-content;
         flex-basis: 45%;
+        font-family: "Inter", sans-serif;
         font-size: 3vw;
         color: #475695;
         letter-spacing: 0.2vw;
         font-weight: 600;
     }
-
     .nav {
         display: flex;
         flex-direction: row;
         flex-basis: 45%;
+        width: 100%;
+        height: 100%;
         justify-content: center;
         align-items: center;
         gap: 2vw;
-
         a {
             width: 100%;
             padding-top: 2%;
-            font-size: 1.4vw;
+            font-family: "Inter", sans-serif;
+            text-decoration: underline;
             color: #7288de;
             text-transform: uppercase;
-            text-decoration: underline;
+            max-width: max-content;
+            max-height: max-content;
+            font-size: 1.4vw;
             font-weight: 600;
+            align-items: end;
+            justify-content: end;
             transition: all 0.3s ease-in-out;
-
             &:hover {
                 transform: scale(1.05);
             }
-
             &:active {
                 color: #5a6ebf;
-                transform: scale(0.9);
-                opacity: 0.9;
+                transform: scale(0.9); // Немного уменьшает при клике
+                opacity: 0.9; // Дает эффект нажатия
             }
         }
     }
-
     .logout {
         display: flex;
         flex-basis: 15%;
-        justify-content: flex-end;
+        height: 100%;
+        width: 100%;
+        justify-content: end;
         align-items: center;
-
         a {
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             height: 40%;
             width: auto;
-
             &:hover {
+                transition: all 0.3s ease-in-out;
                 animation: logout 2s linear infinite;
             }
-
             svg {
                 height: 100%;
                 width: auto;
@@ -87,7 +88,7 @@ header {
     align-items: center;
     position: fixed;
     margin-bottom: 2vh;
-    top: 10vh;
+    top: 12vh;
     right: 2vw;
     width: auto;
     z-index: 1000;
@@ -95,7 +96,6 @@ header {
     .btns {
         display: flex;
         gap: 1vw;
-
         .btn {
             padding: 1vh 1vw;
             font-size: 1vw;
@@ -131,31 +131,47 @@ header {
     display: flex;
     margin: 10vh auto 0;
     font-weight: bold;
-    padding: 10px; 
     background: #9BC2E6;
     border-radius: 1.2vw 1.2vw 0vw 0vw;
     width: fit-content;
-    &:first-child {
-        display: flex;
-        width: 5vw; /* Ширина для первого элемента */
-        word-wrap: none;
+    margin: 10vh auto 0;
+    .toggle-btn {
+        cursor: pointer;
+        font-weight: bold;
+        width: 2vw;
+        height: 2vh;
+        text-align: center;
+        background-color: transparent;
+
+        &:hover {
+            color: #007bff;
+        }
     }
     .column-title {
+        display: flex;
+        justify-content: center;
+        align-items: center;
         color: #000;
         text-align: center;
         padding: 1vh 1vw;
         font-size: 1vw;
         font-style: italic;
-        font-weight:900;
+        font-weight: 900;
         letter-spacing: 0.2vw;
-        width: 10vw;
-        &:first-child {
-            width: 5vw; /* Ширина для первого элемента */
-            word-wrap: none;
-        }
-        &:nth-child(2){
-            margin-left: -0.7vw;
-        }
+        height: 6vh;
+        font-size: 1.2vw;
+        font-weight: 700;
+        letter-spacing: 0.15vw;
+    }
+    .column-title[data-type='Data'] {
+        width: 20vw;
+    }
+    .column-title[data-type='Serial numbers'] {
+        width: 3vw;
+        padding: 0;
+    }
+    .column-title[data-type='Unit'] {
+        width: 7vw;
     }
 }
 
@@ -165,7 +181,7 @@ header {
     border-radius: 0vw 0vw 1.2vw 1.2vw;
     width: fit-content;
     height: fit-content;
-
+    margin: 0 auto;
     .row {
         display: flex;
         align-items: center;
@@ -174,7 +190,7 @@ header {
         transition: 0.3s ease-in-out;
     
         .toggle-btn {
-            cursor: pointer;
+            cursor:default;
             font-weight: bold;
             width: 2vw;
             height: 2vh;
@@ -187,71 +203,149 @@ header {
         }
     
         .cell {
-            font-size: 0.8vw;
-            font-style: italic;
-            font-weight: 700;
-            color: #555;
-            letter-spacing: 0.15vw;
-            overflow: scroll;
-            padding: 0vh 0 0 0.2vw;
-            word-wrap: break-word;
-            box-sizing: border-box;
+            height: 100%;
             border: 0.1vw solid #000;
-            height: 7vh;
-            
-            /* Ширина для всех элементов по умолчанию */
-          width: 10vw;
+            box-sizing: border-box;
+            font-size: 0.8vw;
+            font-weight: 700;
+            color: #000000;
+            letter-spacing: 0.15vw;
+        }
+        .cell[data-type='Data'] {
+            width: 20vw;
+            word-wrap: break-word;
+        }
+        .cell[data-type='Serial numbers'] {
+            display: flex;
+            width: 3vw;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
         }
     
-        .cell:nth-child(2) {
+        .cell[data-type='Unit'] {
             display: flex;
-            width: 3vw; /* Ширина для первого элемента */
-            min-width: 3vw;
-            max-width: 3vw;
-            word-wrap: none;
+            width: 7vw;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
         }
     
         &.hidden {
             display: none;
         }
     }
-    
-    
-    
-
     .hierarchy-level-main_header {
         background-color: #BDD7EE;
         padding-left: 0;
         font-size: 1.2vw;
         font-weight: bolder;
         color: #000;
-
-        &:first-child {
-            background-color: #B4C6E7;
+        height: 7vh;
+        .cell {
+            padding: 0;
+           
         }
-
-        &:nth-child(even) {
-            background-color: #B4C6E7;
+        .cell[data-type='Data'] {
+            width: 20vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
         }
+        .cell[data-type='Serial numbers'] {
+            width: 3vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
+        .cell[data-type='Unit'] {
+            width: 7vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
+        
     }
 
     .hierarchy-level-header {
         background-color: #f8f8f8;
+        height: 5vh;
+        .cell {
+            display: flex;
+            text-align: center;
+            align-items: center;
+            padding: 0;
+           
+        }
+        .cell[data-type='Data'] {
+            width: 20vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
+        .cell[data-type='Serial numbers'] {
+            width: 3vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
+        .cell[data-type='Unit'] {
+            width: 7vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
     }
 
     .hierarchy-level-sub_header {
-        background-color: #f0f0f0;
+        background-color: #ffffff;
+        height: 4vh;
+        .cell {
+            display: flex;
+            text-align: center;
+            align-items: center;
+            padding: 0;
+        }
+        .cell[data-type='Data'] {
+            width: 20vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
+        .cell[data-type='Serial numbers'] {
+            width: 3vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
+        .cell[data-type='Unit'] {
+            width: 7vw;
+            word-wrap: break-word;
+            input{
+                height: 100%;
+                width: 100%;
+             }
+        }
     }
 
     .hierarchy-level-sub_sub_header {
-        background-color: #e8e8e8;
+        background-color: hsl(0, 0%, 91%);
     }
 
-    .hierarchy-level-main_header:nth-of-type(odd) ~ .hierarchy-level-header {
-        background-color: #DDEBF7;
-    }
-
-    .hierarchy-level-main_header:nth-of-type(even) ~ .hierarchy-level-header {
-        background-color: #D9E1F2;
-    }
 }
