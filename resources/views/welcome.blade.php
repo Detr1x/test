@@ -18,7 +18,7 @@
         @foreach ($tables as $table)
             <div class="table-container">
                 <h2>{{ $table->name }}</h2>
-                <a href="{{ route('tables.show', $table->table_token) }}" class="btn btn-primary">Открыть</a>
+                <a href="{{ route('user_table', $table->table_token) }}" class="btn btn-primary">{{$table->name}}</a>
             </div>
         @endforeach
     </div>
