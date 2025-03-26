@@ -23,7 +23,6 @@ Route::middleware(['auth'])->group(function () {
     ->name('user_table');
     Route::post('/save-cell-data', 'App\Http\Controllers\UserController@saveCellData')
     ->name('save_table_data');
-
     Route::get('/logout', 'App\Http\Controllers\AuthController@logout')
         ->name('logout');
 });

@@ -64,15 +64,14 @@ public function saveCellData(Request $request)
         's_number' => 'required|integer',
         'method' => 'nullable|string'
     ]);
- 
-    
+
     $data = Column_Data::where('column_token', $request->column_token)
                       ->where('hierarchy_token', $request->hierarchy_token)
                       ->first();
 
     if ($data) {
         $data->data = $request->data;
-        if ($request->has('parent_hierarchy_token')) {  // Исправлено
+        if ($request->has('parent_hierarchy_token')) {
             $data->parent_hierarchy_token = $request->parent_hierarchy_token;
         }
         $data->save();
@@ -102,10 +101,39 @@ public function saveCellData(Request $request)
         ]);
     }
 
+    // Вызываем обновление родительской суммы
+    $this->updateParentSum($request->table_token, $request->column_token, $request->parent_hierarchy_token);
+
     return response()->json(['success' => true]);
 }
 
-    
+private function updateParentSum($table_token, $column_token, $parent_hierarchy_token)
+{
+    if (!$parent_hierarchy_token) return;
+
+    // Считаем сумму всех детей для текущего родителя
+    $sum = Column_Data::where('table_token', $table_token)
+        ->where('column_token', $column_token)
+        ->where('parent_hierarchy_token', $parent_hierarchy_token)
+        ->sum('data');
+
+    // Обновляем значение у родителя
+    $parent = Column_Data::where('table_token', $table_token)
+        ->where('column_token', $column_token)
+        ->where('hierarchy_token', $parent_hierarchy_token)
+        ->first();
+
+    if ($parent) {
+        $parent->data = $sum;
+        $parent->save();
+    }
+
+    // Рекурсивно обновляем родителя текущего родителя
+    if ($parent && $parent->parent_hierarchy_token) {
+        $this->updateParentSum($table_token, $column_token, $parent->parent_hierarchy_token);
+    }
+}
+
 }
 
 

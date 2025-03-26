@@ -18,7 +18,7 @@
 
 <body>
     <header>
-        <h1>Table: {{ $table->name }}!</h1>
+        <h1>Table: {{ $table->name }}</h1>
         <div class="logout">
             <a href="{{ route('logout') }}"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                 <!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.-->
@@ -209,8 +209,8 @@
         
             attachEventListeners();
         
-            function saveData(input) {
-    let value = input.value.trim();
+            function saveData(input, callback = null) {
+    let value = input.value ? input.value.trim() : input.textContent.trim();
     let columnToken = input.dataset.column;
     let hierarchyToken = input.dataset.hierarchy;
     let tableToken = input.dataset.table;
@@ -225,11 +225,9 @@
         return;
     }
 
-    // Если поле пустое, сохраняем как null (или как пустую строку, если так надо в БД)
     let formattedValue = value === "" ? null : value;
-
-    let cell = input.parentElement;
-    cell.style.backgroundColor = "#fffa90"; // Индикация сохранения
+    let cell = input.parentElement || input; // Если передаём span, используем его напрямую
+    cell.style.backgroundColor = "#fffa90";
 
     fetch("{{ route('save_table_data') }}", {
         method: "POST",
@@ -252,19 +250,71 @@
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Обновляем ячейку (если пусто, оставляем placeholder)
-            cell.innerHTML = formattedValue !== null ? formattedValue : `<span class="placeholder"></span>`;
-            cell.style.backgroundColor = "#c8e6c9"; // Зеленая подсветка
+            cell.textContent = formattedValue !== null ? formattedValue : ``;
+            cell.style.backgroundColor = "#c8e6c9";
             setTimeout(() => { cell.style.backgroundColor = ""; }, 1000);
+
+            if (callback) callback(); // Вызываем переданный коллбэк (например, для обновления родителя)
         } else {
             alert("Ошибка сохранения: " + data.message);
-            cell.style.backgroundColor = "#ffcccc"; // Красная подсветка ошибки
+            cell.style.backgroundColor = "#ffcccc";
         }
     })
     .catch(error => {
         console.error("Ошибка:", error);
         cell.style.backgroundColor = "#ffcccc";
     });
+    
+}
+
+
+function updateParentSum(parentToken, columnToken) {
+    if (!parentToken) return; // Нет родителя – нет обновления
+
+    let children = document.querySelectorAll(`.cell[data-parent='${parentToken}'][data-column='${columnToken}']`);
+    let parentCell = document.querySelector(`.cell[data-hierarchy='${parentToken}'][data-column='${columnToken}']`);
+
+    if (!parentCell || children.length === 0) return;
+
+    let values = Array.from(children)
+        .map(child => parseFloat(child.textContent) || 0);
+    
+    let method = parentCell.dataset.method || "sum"; // По умолчанию суммируем
+    let newValue = (method === "average") 
+        ? (values.length > 0 ? (values.reduce((a, b) => a + b, 0) / values.length).toFixed(2) : 0)
+        : values.reduce((a, b) => a + b, 0);
+
+    parentCell.textContent = newValue; // Обновляем UI
+
+    // Сохраняем в БД
+    saveData(parentCell, () => {
+        // После сохранения родителя обновляем его родителя (рекурсивно)
+        let grandParentToken = parentCell.dataset.parent;
+        if (grandParentToken) {
+            updateParentSum(grandParentToken, columnToken);
+        }
+    });
+}
+
+function updateParentValues(parentHierarchyToken, columnToken) {
+    if (!parentHierarchyToken) return;
+
+    let tableToken = document.querySelector('table').dataset.tableToken;
+
+    fetch(`/get_parent_value?table_token=${tableToken}&column_token=${columnToken}&hierarchy_token=${parentHierarchyToken}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            let parentCell = document.querySelector(`[data-hierarchy="${parentHierarchyToken}"][data-column="${columnToken}"]`);
+            if (parentCell) {
+                parentCell.textContent = data.value; // Обновляем значение в DOM
+            }
+
+            // Рекурсивно обновляем родителей дальше
+            updateParentValues(data.parent_hierarchy_token, columnToken);
+        }
+    })
+    .catch(error => console.error('Ошибка при обновлении родителя:', error));
 }
 
 
